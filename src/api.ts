@@ -1,38 +1,35 @@
+import 'dotenv/config';
+import axios, { AxiosInstance } from 'axios';
+import { CloverEmployee } from './types/clover-employee';
+import { CloverOrder } from './types/clover-order';
+import { CloverResponse } from './types/clover';
+
 class CloverClient {
-  #merchantId;
-  #privateToken;
+  #merchantId: string;
+  #privateToken: string;
+  #axiosInstance: AxiosInstance;
 
   constructor(merchantId: string, privateToken: string) {
     if (!merchantId || !privateToken) {
       throw new Error("Merchant ID and Private Token are required.");
     }
+
     this.#merchantId = merchantId;
     this.#privateToken = privateToken;
+
+    this.#axiosInstance = axios.create({
+      baseURL: `https://api.clover.com/v3/merchants/${this.#merchantId}`,
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${this.#privateToken}`,
+      },
+    });
   }
 
-  async #request(path: string, queryParams = {}) {
-    const url = new URL(
-      `https://api.clover.com/v3/merchants/${this.#merchantId}${path}`,
-    );
-
-    Object.entries(queryParams).forEach(([key, value]) =>
-      url.searchParams.append(key, value),
-    );
-
+  async #request<T>(path: string, queryParams = {}): Promise<T> {
     try {
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${this.#privateToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await this.#axiosInstance.get<T>(path, { params: queryParams });
+      return response.data;
     } catch (error) {
       console.error("API request failed:", error);
       throw error;
@@ -40,23 +37,25 @@ class CloverClient {
   }
 
   async fetchEmployees() {
-    return this.#request("/employees");
+    return this.#request<CloverResponse<CloverEmployee[]>>("/employees");
   }
 
   async fetchOrdersByEmployee(employeeId: string) {
-    return this.#request(`/employees/${employeeId}/orders`);
+    return this.#request<CloverResponse<CloverOrder[]>>(`/employees/${employeeId}/orders`);
   }
 
   async fetchOrderDetails(orderId: string) {
-    return this.#request(`/orders/${orderId}`);
+    return this.#request<CloverResponse<CloverOrder>>(`/orders/${orderId}`);
   }
 }
 
+// Usage
 const MERCHANT_ID = process.env.CLOVER_MERCHANT_ID;
 const PRIVATE_TOKEN = process.env.CLOVER_PRIVATE_TOKEN;
 if (!MERCHANT_ID || !PRIVATE_TOKEN) {
   throw new Error("CLOVER_MERCHANT_ID and CLOVER_PRIVATE_TOKEN environment variables are required.");
 }
+
 const cloverClient = new CloverClient(MERCHANT_ID, PRIVATE_TOKEN);
 
 (async () => {
@@ -68,11 +67,8 @@ const cloverClient = new CloverClient(MERCHANT_ID, PRIVATE_TOKEN);
     console.log("Target Employee:", targetEmployee);
 
     const orders = await cloverClient.fetchOrdersByEmployee(targetEmployee.id);
-    // console.log("Orders:", orders[0]);
-    // for (const order of orders.elements) {
     const orderDetails = await cloverClient.fetchOrderDetails(orders.elements[0].id);
     console.log("Order Details:", orderDetails);
-    // }
   } catch (error) {
     console.error("Error:", error);
   }
