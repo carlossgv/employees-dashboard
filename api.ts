@@ -2,7 +2,7 @@ class CloverClient {
   #merchantId;
   #privateToken;
 
-  constructor(merchantId, privateToken) {
+  constructor(merchantId: string, privateToken: string) {
     if (!merchantId || !privateToken) {
       throw new Error("Merchant ID and Private Token are required.");
     }
@@ -10,7 +10,7 @@ class CloverClient {
     this.#privateToken = privateToken;
   }
 
-  async #request(path, queryParams = {}) {
+  async #request(path: string, queryParams = {}) {
     const url = new URL(
       `https://api.clover.com/v3/merchants/${this.#merchantId}${path}`,
     );
@@ -43,17 +43,20 @@ class CloverClient {
     return this.#request("/employees");
   }
 
-  async fetchOrdersByEmployee(employeeId) {
+  async fetchOrdersByEmployee(employeeId: string) {
     return this.#request(`/employees/${employeeId}/orders`);
   }
 
-  async fetchOrderDetails(orderId) {
+  async fetchOrderDetails(orderId: string) {
     return this.#request(`/orders/${orderId}`);
   }
 }
 
 const MERCHANT_ID = process.env.CLOVER_MERCHANT_ID;
 const PRIVATE_TOKEN = process.env.CLOVER_PRIVATE_TOKEN;
+if (!MERCHANT_ID || !PRIVATE_TOKEN) {
+  throw new Error("CLOVER_MERCHANT_ID and CLOVER_PRIVATE_TOKEN environment variables are required.");
+}
 const cloverClient = new CloverClient(MERCHANT_ID, PRIVATE_TOKEN);
 
 (async () => {

@@ -1,0 +1,24 @@
+{
+  "name": "employees-dashboard",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/carlossgv/employees-dashboard#readme",
+  "bugs": {
+    "url": "https://github.com/carlossgv/employees-dashboard/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/carlossgv/employees-dashboard.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "api.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.29",
+    "typescript": "^5.8.3"
+  }
+}
