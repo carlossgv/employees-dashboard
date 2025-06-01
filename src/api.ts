@@ -5,30 +5,30 @@ import { CloverResponse } from './types/clover';
 import { EmployeeSummariesResponse as CloverEmployeeSummariesResponse } from './types/clover-employee-summary';
 
 class CloverClient {
-  #merchantId: string;
-  #privateToken: string;
-  #axiosInstance: AxiosInstance;
+  private merchantId: string;
+  private privateToken: string;
+  private axiosInstance: AxiosInstance;
 
   constructor(merchantId: string, privateToken: string) {
     if (!merchantId || !privateToken) {
       throw new Error("Merchant ID and Private Token are required.");
     }
 
-    this.#merchantId = merchantId;
-    this.#privateToken = privateToken;
+    this.merchantId = merchantId;
+    this.privateToken = privateToken;
 
-    this.#axiosInstance = axios.create({
-      baseURL: `https://api.clover.com/v3/merchants/${this.#merchantId}`,
+    this.axiosInstance = axios.create({
+      baseURL: `https://api.clover.com/v3/merchants/${this.merchantId}`,
       headers: {
         Accept: "application/json",
-        Authorization: `Bearer ${this.#privateToken}`,
+        Authorization: `Bearer ${this.privateToken}`,
       },
     });
   }
 
-  async #request<T>(path: string, queryParams = {}): Promise<T> {
+  private async request<T>(path: string, queryParams = {}): Promise<T> {
     try {
-      const response = await this.#axiosInstance.get<T>(path, { params: queryParams });
+      const response = await this.axiosInstance.get<T>(path, { params: queryParams });
       return response.data;
     } catch (error) {
       console.error("API request failed:", error);
@@ -37,7 +37,7 @@ class CloverClient {
   }
 
   async fetchEmployees() {
-    return this.#request<CloverResponse<CloverEmployee[]>>("/employees");
+    return this.request<CloverResponse<CloverEmployee[]>>("/employees");
   }
 
   async fetchEmployeeSummary(
@@ -53,27 +53,29 @@ class CloverClient {
       filters.push(`clientCreatedTime<${end}`);
     }
 
-    const query = filters.map(f => `filter=${encodeURIComponent(f)}`).join('&');
+    const query = filters.map(f => `filter=${encodeURIComponent(f)}`).join("&");
 
-    return this.#request<CloverEmployeeSummariesResponse>(
+    return this.request<CloverEmployeeSummariesResponse>(
       `summaries/employee_sales?${query}`
     );
   }
 
-  async fetchLineItemReportByEmployee(
+  async fetchLineItemReport(
     employeeId: string,
     createdTimeStart: number,
     createdTimeEnd: number
-  ): Promise<CloverReportResponse> {
-    const filters: string[] = [
-      `clientCreatedTime>${createdTimeStart}`,
+  ) {
+    const filters = [
       `clientCreatedTime<${createdTimeEnd}`,
-      `employee.id=${employeeId}`
+      `clientCreatedTime>${createdTimeStart}`,
+      `employee.id=${employeeId}`,
     ];
 
-    const query = filters.map(f => `filter=${encodeURIComponent(f)}`).join('&');
+    const query = filters.map(f => `filter=${encodeURIComponent(f)}`).join("&");
 
-    return this.#request<CloverReportResponse>(`reports/line_items?${query}`);
+    const path = `/reports/line_items?${query}`;
+
+    return this.request<CloverReportResponse>(path);
   }
 }
 
@@ -96,7 +98,7 @@ const cloverClient = new CloverClient(MERCHANT_ID, PRIVATE_TOKEN);
     // example start timestamp: 1748581200000
     // example end timestamp: 1748667599000
     const end = 1748753999000
-    const start =1748667600000
+    const start = 1748667600000
 
     const targetEmployee = employees.find(emp => emp.id === "5NGP9TCKXBS8M");
     if (!targetEmployee) {
@@ -109,7 +111,7 @@ const cloverClient = new CloverClient(MERCHANT_ID, PRIVATE_TOKEN);
     console.debug("Employee Summary", summary);
     console.debug('Summary:', summary.employeeSummaries.elements[0]);
 
-    const lineItemReport = await cloverClient.fetchLineItemReportByEmployee(targetEmployee.id, start, end);
+    const lineItemReport = await cloverClient.fetchLineItemReport(targetEmployee.id, start, end);
     // console.debug("Line Item Report:", lineItemReport);
     console.debug('Line Item Report:', lineItemReport.revenueItems.items.elements[0]);
   } catch (error) {
