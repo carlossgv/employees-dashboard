@@ -1,4 +1,4 @@
-type CloverReportResponse = {
+export type CloverReportResponse = {
   href: string;
   revenueItems: CloverRevenueItems;
   nonRevenueItems: CloverNonRevenueItems;
